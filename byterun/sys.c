@@ -26,7 +26,7 @@
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#if _WIN32
+#ifdef _WIN32
 #include <io.h> /* for isatty */
 #else
 #include <sys/wait.h>
@@ -324,6 +324,16 @@ CAMLprim value caml_sys_getenv(value var)
   return caml_copy_string(res);
 }
 
+CAMLprim value caml_sys_secure_getenv(value var)
+{
+  char * res;
+
+  if (! caml_string_is_c_safe(var)) caml_raise_not_found();
+  res = caml_secure_getenv(String_val(var));
+  if (res == 0) caml_raise_not_found();
+  return caml_copy_string(res);
+}
+
 char * caml_exe_name;
 char ** caml_main_argv;
 
@@ -602,7 +612,7 @@ void caml_load_plugin(char *plugin)
 
 void caml_cplugins_load(char *env_variable)
 {
-  char *plugins = getenv(env_variable);
+  char *plugins = caml_secure_getenv(env_variable);
   if(plugins != NULL){
     char* curs = plugins;
     while(*curs != 0){
